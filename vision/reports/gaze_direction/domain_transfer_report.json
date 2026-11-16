@@ -1,0 +1,11 @@
+{
+  "cross_domain_accuracy": 0.4073,
+  "samples_tested": 1500,
+  "source_dataset": "Mendeley Eye Gaze Dataset",
+  "target_dataset": "Kayvan Shah Eye Dataset",
+  "domain_differences": [
+    "Bounding box framing: Kayvan Shah features tight bounding box crops of individual eyes (100x100), whereas Mendeley features wider facial region crops (800x600).",
+    "Color/Lighting profiles: Different illumination conditions and sensor spectral responses.",
+    "Vertical gaze absence: Kayvan Shah lacks UP and DOWN classes entirely, containing only horizontal gaze."
+  ]
+}

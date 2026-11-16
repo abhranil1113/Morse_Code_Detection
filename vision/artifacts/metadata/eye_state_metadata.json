@@ -1,0 +1,15 @@
+{
+  "model_type": "RandomForestClassifier",
+  "n_estimators": 100,
+  "max_depth": 20,
+  "classes": [
+    "CLOSED",
+    "OPEN"
+  ],
+  "dataset_source": "database\\datasets\\raw\\mrl_eye",
+  "total_samples": 3600,
+  "test_accuracy": 0.987,
+  "test_f1": 0.987,
+  "feature_type": "HOG (Histogram of Oriented Gradients)",
+  "created_at": "2026-11-16 15:15:05"
+}

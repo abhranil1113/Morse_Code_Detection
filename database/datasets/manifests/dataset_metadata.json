@@ -1,0 +1,63 @@
+{
+  "project": "EyeSpeak AI",
+  "version": "1.0.0",
+  "inventory_date": "2026-11-16",
+  "datasets": [
+    {
+      "name": "Mendeley Eye Gaze Dataset",
+      "path": "database/datasets/raw/eye_tracker_data",
+      "status": "VERIFIED_TRAINED",
+      "total_files": 7500,
+      "deduplicated_files": 7328,
+      "exact_duplicates": 172,
+      "corrupted_files": 0,
+      "classes": {
+        "straight": { "mapped_to": "CENTER", "count": 1500 },
+        "left": { "mapped_to": "LEFT", "count": 1500 },
+        "right": { "mapped_to": "RIGHT", "count": 1500 },
+        "up": { "mapped_to": "UP", "count": 1424 },
+        "down": { "mapped_to": "DOWN", "count": 1404 }
+      },
+      "model_produced": "Model 2: Gaze Direction Random Forest (99.45% Test Accuracy)"
+    },
+    {
+      "name": "Kayvan Shah Eye Dataset",
+      "path": "database/datasets/raw/archive",
+      "status": "VERIFIED_EVALUATED",
+      "total_files": 14360,
+      "exact_duplicates": 3110,
+      "corrupted_files": 0,
+      "classes": {
+        "forward_look": { "mapped_to": "CENTER", "count": 3457 },
+        "left_look": { "mapped_to": "LEFT", "count": 3498 },
+        "right_look": { "mapped_to": "RIGHT", "count": 3577 },
+        "close_look": { "mapped_to": null, "count": 3828, "note": "Excluded from gaze to preserve target semantics" }
+      },
+      "evaluation_finding": "Evaluated for horizontal domain transfer; exhibits domain shift due to tight 100x100 crop differences compared to Mendeley's 800x600 crops."
+    },
+    {
+      "name": "Mohan K. Jha Open and Closed Eye Dataset",
+      "path": "database/datasets/raw/step-1-detect-open-and-closed-eye",
+      "status": "NOTEBOOK_FILE_ONLY_IMAGE_FOLDER_MISSING",
+      "notebook_file": "database/datasets/raw/step-1-detect-open-and-closed-eye.ipynb",
+      "error_report": "The provided file is a 488 KB Jupyter Notebook code file rather than a directory of images. The code indicates it trains on Kaggle's /kaggle/input/mrl-dataset/train/Open_Eyes and Closed_Eyes. Place image folders inside database/datasets/raw/step-1-detect-open-and-closed-eye/ to train Model 1."
+    }
+  ],
+  "models": {
+    "model_1_eye_state": {
+      "target_classes": ["CLOSED", "OPEN"],
+      "status": "AWAITING_STEP1_IMAGE_FOLDER",
+      "trainer_script": "vision/ml/train_eye_state.py",
+      "fallback_active": "Geometric EAR Thresholding (Soukupova & Cech 2016) in predictor.py"
+    },
+    "model_2_gaze_direction": {
+      "target_classes": ["CENTER", "LEFT", "RIGHT", "UP", "DOWN"],
+      "status": "TRAINED_AND_SAVED",
+      "algorithm": "RandomForestClassifier(n_estimators=150, max_depth=25)",
+      "artifact": "vision/artifacts/gaze_direction_random_forest.joblib",
+      "test_accuracy": 0.9945,
+      "test_macro_f1": 0.9946,
+      "inference_latency_ms": 0.057
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "project": "EyeSpeak AI",
+  "task": "Phase 1 & Phase 2 Dataset Inspection and Validation",
+  "datasets": {
+    "kayvan_shah_archive": {
+      "dataset_name": "Kayvan Shah Eye Dataset",
+      "root_directory": "database\\datasets\\raw\\archive",
+      "status": "VERIFIED",
+      "total_files": 14360,
+      "readable_images": 14360,
+      "corrupted_images": 0,
+      "exact_duplicates": 3110,
+      "class_distribution": {
+        "close_look": 3828,
+        "forward_look": 3457,
+        "left_look": 3498,
+        "right_look": 3577
+      },
+      "top_resolutions": {
+        "117x117": 385,
+        "118x118": 326,
+        "70x70": 300,
+        "68x68": 298,
+        "116x116": 291
+      },
+      "color_channels": {
+        "3": 14360
+      },
+      "sample_files": [
+        {
+          "filename": "eye_closed (1).png",
+          "class": "close_look",
+          "resolution": "94x94",
+          "channels": 3
+        },
+        {
+          "filename": "eye_closed (10).png",
+          "class": "close_look",
+          "resolution": "117x117",
+          "channels": 3
+        },
+        {
+          "filename": "eye_closed (11).png",
+          "class": "close_look",
+          "resolution": "97x97",
+          "channels": 3
+        }
+      ]
+    },
+    "mendeley_eye_tracker": {
+      "dataset_name": "Mendeley Eye Gaze Dataset",
+      "root_directory": "database\\datasets\\raw\\eye_tracker_data",
+      "status": "VERIFIED",
+      "total_files": 7500,
+      "readable_images": 7500,
+      "corrupted_images": 0,
+      "exact_duplicates": 172,
+      "class_distribution": {
+        "down": 1500,
+        "left": 1500,
+        "right": 1500,
+        "straight": 1500,
+        "up": 1500
+      },
+      "top_resolutions": {
+        "800x600": 738,
+        "440x370": 591,
+        "650x450": 551,
+        "400x300": 545,
+        "700x500": 543
+      },
+      "color_channels": {
+        "3": 7500
+      },
+      "sample_files": [
+        {
+          "filename": "1016_4_.jpg",
+          "class": "down",
+          "resolution": "500x250",
+          "channels": 3
+        },
+        {
+          "filename": "1017_4_.jpg",
+          "class": "down",
+          "resolution": "500x250",
+          "channels": 3
+        },
+        {
+          "filename": "1019_4_.jpg",
+          "class": "down",
+          "resolution": "500x250",
+          "channels": 3
+        }
+      ]
+    },
+    "mohan_k_jha_step1": {
+      "dataset_name": "Mohan K. Jha Open/Closed Dataset",
+      "status": "NOTEBOOK_FILE_ONLY_IMAGE_FOLDER_MISSING",
+      "directory_path": "database\\datasets\\raw\\step-1-detect-open-and-closed-eye",
+      "notebook_file": "database\\datasets\\raw\\step-1-detect-open-and-closed-eye.ipynb",
+      "error": "The file 'step-1-detect-open-and-closed-eye.ipynb' is a Jupyter notebook code script, not an image folder. The code references '/kaggle/input/mrl-dataset/train/Open_Eyes' and 'Closed_Eyes', but the raw image folder was not provided in raw/step-1-detect-open-and-closed-eye/."
+    }
+  }
+}

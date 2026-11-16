@@ -1,0 +1,40 @@
+{
+  "model_type": "RandomForestClassifier",
+  "target_task": "Eye Gaze Direction Classification (5 classes)",
+  "classes": [
+    "CENTER",
+    "LEFT",
+    "RIGHT",
+    "UP",
+    "DOWN"
+  ],
+  "class_to_int": {
+    "CENTER": 0,
+    "LEFT": 1,
+    "RIGHT": 2,
+    "UP": 3,
+    "DOWN": 4
+  },
+  "int_to_class": {
+    "0": "CENTER",
+    "1": "LEFT",
+    "2": "RIGHT",
+    "3": "UP",
+    "4": "DOWN"
+  },
+  "train_samples": 5128,
+  "val_samples": 1100,
+  "test_samples": 1100,
+  "total_deduplicated_samples": 7328,
+  "skipped_exact_duplicates": 172,
+  "test_accuracy": 0.9945,
+  "test_macro_f1": 0.9946,
+  "inference_latency_ms": 0.057,
+  "feature_dim": 1764,
+  "hyperparameters": {
+    "n_estimators": 150,
+    "max_depth": 25,
+    "min_samples_split": 4,
+    "class_weight": "balanced"
+  }
+}

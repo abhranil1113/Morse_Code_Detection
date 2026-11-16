@@ -1,0 +1,27 @@
+EyeSpeak AI - Model 2: Gaze Direction Evaluation Report
+============================================================
+
+Test Accuracy: 99.45%
+Macro F1-Score: 0.9946
+Inference Latency: 0.057 ms / frame
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      CENTER       0.99      0.99      0.99       225
+        LEFT       1.00      1.00      1.00       225
+       RIGHT       0.99      1.00      0.99       225
+          UP       1.00      0.99      1.00       214
+        DOWN       1.00      1.00      1.00       211
+
+    accuracy                           0.99      1100
+   macro avg       0.99      0.99      0.99      1100
+weighted avg       0.99      0.99      0.99      1100
+
+
+Confusion Matrix (Rows=True, Cols=Pred, Classes=['CENTER', 'LEFT', 'RIGHT', 'UP', 'DOWN']):
+[[222   0   2   0   1]
+ [  0 225   0   0   0]
+ [  1   0 224   0   0]
+ [  1   1   0 212   0]
+ [  0   0   0   0 211]]

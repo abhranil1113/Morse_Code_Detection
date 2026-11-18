@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { TelemetryPayload } from "../types";
 import { VisionStreamSocket } from "../services/websocket";
 
-export function useEyeSpeak() {
+export function useEyeSpeak(enabled: boolean = true) {
   const [telemetry, setTelemetry] = useState<TelemetryPayload>({
     face_detected: false,
     ear: 0.0,
@@ -17,6 +17,15 @@ export function useEyeSpeak() {
   const socketRef = useRef<VisionStreamSocket | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      setIsConnected(false);
+      return;
+    }
+
     const socket = new VisionStreamSocket();
     socketRef.current = socket;
     socket.connect((data) => {
@@ -28,7 +37,7 @@ export function useEyeSpeak() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []);
+  }, [enabled]);
 
   const sendFrame = useCallback((base64Image: string) => {
     socketRef.current?.sendFrame(base64Image);

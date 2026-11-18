@@ -78,15 +78,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
             <button
               onClick={onLogout}
+              title="Sign out and stop camera"
               style={{
-                padding: "6px 10px",
+                padding: "6px 12px",
                 borderRadius: "6px",
-                backgroundColor: "transparent",
-                border: "1px solid #64748b",
-                color: "#cbd5e1",
-                fontSize: "0.8rem",
+                backgroundColor: "#dc2626",
+                border: "none",
+                color: "#ffffff",
+                fontSize: "0.82rem",
+                fontWeight: 600,
                 cursor: "pointer",
+                transition: "background-color 0.2s ease",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#b91c1c")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
             >
               Sign Out
             </button>

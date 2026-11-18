@@ -1,25 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Navbar } from "../components/Navbar";
-import { CameraFeed } from "../features/camera/CameraFeed";
+import { CameraFeed, stopAllCameraStreams } from "../features/camera/CameraFeed";
 import { BlinkIndicator } from "../features/camera/BlinkIndicator";
 import { MorseComposer } from "../features/composer/MorseComposer";
 import { MessageList } from "../features/messages/MessageList";
 import { RoomSelector } from "../features/rooms/RoomSelector";
 import { ParticipantList } from "../features/participants/ParticipantList";
 import { AuthModal } from "../features/auth/AuthModal";
+import { AuthPage } from "./AuthPage";
 import { CalibrationModal } from "../features/calibration/CalibrationModal";
 import { useEyeSpeak } from "../hooks/useEyeSpeak";
 import { api } from "../services/api";
 import { Room, Message, User, Participant, TelemetryPayload } from "../types";
 
 export const Dashboard: React.FC = () => {
-  const { telemetry: streamTelemetry, isConnected, sendFrame } = useEyeSpeak();
-  const [localTelemetry, setLocalTelemetry] = useState<TelemetryPayload | null>(null);
-
-  // Active telemetry merges stream telemetry with any local tactile/keyboard inputs
-  const telemetry: TelemetryPayload = localTelemetry || streamTelemetry;
-
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { telemetry: streamTelemetry, isConnected, sendFrame } = useEyeSpeak(!!currentUser);
+  const [localTelemetry, setLocalTelemetry] = useState<TelemetryPayload | null>(null);
+  const telemetry: TelemetryPayload = localTelemetry || streamTelemetry;
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -33,7 +32,8 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     api.getCurrentUser()
       .then((user) => setCurrentUser(user))
-      .catch(() => setCurrentUser(null));
+      .catch(() => setCurrentUser(null))
+      .finally(() => setIsAuthChecking(false));
   }, []);
 
   // 2. Load rooms
@@ -58,8 +58,10 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    refreshRooms();
-  }, []);
+    if (currentUser) {
+      refreshRooms();
+    }
+  }, [currentUser]);
 
   // 3. Load messages & participants on room selection
   useEffect(() => {
@@ -200,6 +202,41 @@ export const Dashboard: React.FC = () => {
     }
   }, [streamTelemetry.gesture_action]);
 
+  if (isAuthChecking) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#090d16",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#94a3b8",
+          gap: "14px",
+          fontFamily: "system-ui, -apple-system, sans-serif",
+        }}
+      >
+        <span style={{ fontSize: "40px" }}>👁️</span>
+        <span style={{ fontSize: "14px", fontWeight: 600, color: "#38bdf8", letterSpacing: "0.5px" }}>
+          Loading EyeSpeak AI...
+        </span>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <AuthPage
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          setNotification(`Welcome, ${user.display_name || user.username}!`);
+          setTimeout(() => setNotification(null), 3000);
+        }}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#0f172a" }}>
       <Navbar
@@ -207,8 +244,25 @@ export const Dashboard: React.FC = () => {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={async () => {
-          await api.logout();
+          // 1. Force stop all active camera hardware streams and media tracks immediately
+          stopAllCameraStreams();
+          try {
+            window.dispatchEvent(new CustomEvent("eyespeak:stop-camera"));
+          } catch {}
+
+          // 2. Synchronously wipe state so UI transitions immediately to AuthPage
           setCurrentUser(null);
+          setLocalTelemetry(null);
+          setMessages([]);
+          setParticipants([]);
+          setSelectedRoomId("");
+
+          // 3. Purge storage and notify backend with fire-and-forget timeout
+          try {
+            await api.logout();
+          } catch (e) {
+            console.error("Logout error:", e);
+          }
         }}
         onOpenCalibration={() => setIsCalibOpen(true)}
       />

@@ -59,26 +59,47 @@ export const api = {
   },
 
   async getCurrentUser(): Promise<User> {
+    const token = localStorage.getItem("eyespeak_access_token");
+    if (!token) {
+      throw new Error("No active session");
+    }
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to fetch user");
+    if (!res.ok) {
+      localStorage.removeItem("eyespeak_access_token");
+      localStorage.removeItem("eyespeak_refresh_token");
+      throw new Error("Failed to fetch user");
+    }
     return res.json();
   },
 
   async logout(): Promise<void> {
     const refreshToken = localStorage.getItem("eyespeak_refresh_token");
+
+    // 1. Immediately and synchronously wipe all client-side authentication tokens
+    localStorage.removeItem("eyespeak_access_token");
+    localStorage.removeItem("eyespeak_refresh_token");
+    try {
+      sessionStorage.clear();
+    } catch {}
+
+    // 2. Non-blocking best-effort notification to backend with strict 1.2s timeout
     if (refreshToken) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         await fetch(`${API_BASE}/auth/logout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: refreshToken }),
+          signal: controller.signal,
         });
-      } catch {}
+        clearTimeout(timeoutId);
+      } catch {
+        // Safe to ignore: client credentials are already wiped
+      }
     }
-    localStorage.removeItem("eyespeak_access_token");
-    localStorage.removeItem("eyespeak_refresh_token");
   },
 
   // --- Rooms & Sessions ---

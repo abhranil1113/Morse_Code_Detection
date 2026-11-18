@@ -14,6 +14,13 @@ export interface TelemetryPayload {
   right_eye_state?: "OPEN" | "CLOSED" | "UNAVAILABLE";
   overall_eye_state?: "OPEN" | "CLOSED" | "PARTIAL" | "UNAVAILABLE";
   eye_state: "OPEN" | "CLOSED" | "PARTIAL" | "UNAVAILABLE" | "UNKNOWN";
+  left_eye_visibility?: "VISIBLE" | "PARTIALLY_VISIBLE" | "OCCLUDED" | "OUT_OF_FRAME" | "TRACKING_LOST" | "UNKNOWN" | string;
+  right_eye_visibility?: "VISIBLE" | "PARTIALLY_VISIBLE" | "OCCLUDED" | "OUT_OF_FRAME" | "TRACKING_LOST" | "UNKNOWN" | string;
+  tracking_status?: "TRACKING" | "REACQUIRING" | "LOST" | string;
+  face_box?: EyeBox | null;
+  head_pose?: { yaw: number; pitch: number; roll: number };
+  head_yaw?: number;
+  head_pitch?: number;
   left_eye_confidence?: number;
   right_eye_confidence?: number;
   eye_detection_confidence?: number;

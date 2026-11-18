@@ -7,9 +7,46 @@ interface CameraFeedProps {
   onFrameCapture?: (base64Image: string) => void;
 }
 
+export function stopAllCameraStreams() {
+  // 1. Stop all registered window streams
+  if (typeof window !== "undefined" && (window as any).__eyespeak_active_streams) {
+    const streams: MediaStream[] = (window as any).__eyespeak_active_streams;
+    streams.forEach((stream) => {
+      try {
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          track.enabled = false;
+        });
+      } catch (e) {}
+    });
+    (window as any).__eyespeak_active_streams = [];
+  }
+
+  // 2. Stop all video elements in DOM
+  if (typeof document !== "undefined") {
+    document.querySelectorAll("video").forEach((videoEl) => {
+      if (videoEl.srcObject) {
+        try {
+          const s = videoEl.srcObject as MediaStream;
+          s.getTracks().forEach((track) => {
+            track.stop();
+            track.enabled = false;
+          });
+        } catch (e) {}
+        videoEl.srcObject = null;
+      }
+      try {
+        videoEl.pause();
+      } catch (e) {}
+    });
+  }
+}
+
 export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, telemetry, onFrameCapture }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isMountedRef = useRef<boolean>(true);
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
@@ -39,9 +76,23 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
     }
   }
 
+  const stopCamera = () => {
+    stopAllCameraStreams();
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      try {
+        videoRef.current.pause();
+      } catch (e) {}
+    }
+    setHasPermission(false);
+  };
+
   const requestCamera = async () => {
     try {
       setErrorMsg("");
+
+      if (!isMountedRef.current) return;
 
       // Verify browser MediaDevices support (requires secure context or localhost)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -56,9 +107,23 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
             navigator,
             { video: { width: 640, height: 480, facingMode: "user" } },
             (stream: MediaStream) => {
+              if (!isMountedRef.current) {
+                stream.getTracks().forEach((t) => t.stop());
+                return;
+              }
+              if (typeof window !== "undefined") {
+                (window as any).__eyespeak_active_streams = (window as any).__eyespeak_active_streams || [];
+                (window as any).__eyespeak_active_streams.push(stream);
+              }
+              if (typeof window !== "undefined") {
+        (window as any).__eyespeak_active_streams = (window as any).__eyespeak_active_streams || [];
+        (window as any).__eyespeak_active_streams.push(stream);
+      }
+
+      streamRef.current = stream;
               if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                videoRef.current.play();
+                videoRef.current.play().catch(() => {});
               }
               setHasPermission(true);
               if (onPermissionGranted) onPermissionGranted();
@@ -79,13 +144,33 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: "user" },
       });
+
+      // If component unmounted or user logged out while awaiting camera permission:
+      if (!isMountedRef.current) {
+        stream.getTracks().forEach((track) => {
+          try {
+            track.stop();
+            track.enabled = false;
+          } catch (e) {}
+        });
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        (window as any).__eyespeak_active_streams = (window as any).__eyespeak_active_streams || [];
+        (window as any).__eyespeak_active_streams.push(stream);
+      }
+
+      streamRef.current = stream;
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       }
       setHasPermission(true);
       if (onPermissionGranted) onPermissionGranted();
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       console.error("Camera access error:", err);
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         setErrorMsg("Browser permission blocked: Click the lock/tune icon in the browser address bar (left of localhost:5173) and switch Camera to 'Allow', then refresh.");
@@ -100,12 +185,18 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     requestCamera();
+
+    const handleForceStop = () => {
+      stopCamera();
+    };
+    window.addEventListener("eyespeak:stop-camera", handleForceStop);
+
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      isMountedRef.current = false;
+      window.removeEventListener("eyespeak:stop-camera", handleForceStop);
+      stopCamera();
     };
   }, []);
 
@@ -115,8 +206,8 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
 
     if (!canvasRef.current) {
       canvasRef.current = document.createElement("canvas");
-      canvasRef.current.width = 480;
-      canvasRef.current.height = 360;
+      canvasRef.current.width = 640;
+      canvasRef.current.height = 480;
     }
 
     const interval = setInterval(() => {
@@ -128,9 +219,9 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
       if (!ctx) return;
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.55);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
       onFrameCapture(dataUrl);
-    }, 75); // ~13 FPS stream
+    }, 55); // ~18 FPS stream with high-fidelity resolution for MediaPipe FaceMesh
 
     return () => clearInterval(interval);
   }, [hasPermission, onFrameCapture]);
@@ -245,7 +336,7 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
                     textShadow: "0 1px 3px rgba(0,0,0,0.8)",
                   }}
                 >
-                  L-EYE [{leftEyeState}]
+                  L-EYE [{leftEyeState}{telemetry?.left_eye_visibility ? ` | ${telemetry.left_eye_visibility.slice(0, 4)}` : ""}]
                 </span>
                 {/* Corner crosshairs */}
                 <div style={{ position: "absolute", top: -2, left: -2, width: 8, height: 8, borderTop: `2px solid ${leftEyeColor}`, borderLeft: `2px solid ${leftEyeColor}` }} />
@@ -292,7 +383,7 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
                     textShadow: "0 1px 3px rgba(0,0,0,0.8)",
                   }}
                 >
-                  R-EYE [{rightEyeState}]
+                  R-EYE [{rightEyeState}{telemetry?.right_eye_visibility ? ` | ${telemetry.right_eye_visibility.slice(0, 4)}` : ""}]
                 </span>
                 {/* Corner crosshairs */}
                 <div style={{ position: "absolute", top: -2, left: -2, width: 8, height: 8, borderTop: `2px solid ${rightEyeColor}`, borderLeft: `2px solid ${rightEyeColor}` }} />
@@ -308,21 +399,28 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
                 top: "42%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                backgroundColor: "rgba(15, 23, 42, 0.85)",
-                padding: "8px 16px",
+                backgroundColor: "rgba(15, 23, 42, 0.90)",
+                padding: "10px 18px",
                 borderRadius: "8px",
-                border: "1px dashed #64748b",
-                color: "#94a3b8",
+                border: "1px dashed #38bdf8",
+                color: "#e2e8f0",
                 fontSize: "12px",
                 textAlign: "center",
+                maxWidth: "300px",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
               }}
             >
-              Align face to camera to track eyes
+              <div style={{ fontWeight: 600, color: "#38bdf8", marginBottom: "4px" }}>
+                AI Vision Seeking Face & Eyes
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: "11px", lineHeight: "1.4" }}>
+                Position face towards camera in normal lighting. Ensure backend server is running.
+              </div>
             </div>
           )}
 
-          {/* Bottom EAR HUD */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {/* Bottom EAR & Head Orientation HUD */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
             <span
               style={{
                 backgroundColor: "rgba(15, 23, 42, 0.75)",
@@ -334,10 +432,26 @@ export const CameraFeed: React.FC<CameraFeedProps> = ({ onPermissionGranted, tel
             >
               EAR: {telemetry ? telemetry.ear.toFixed(2) : "0.28"}
             </span>
+
+            {telemetry?.head_yaw !== undefined && (
+              <span
+                style={{
+                  backgroundColor: "rgba(15, 23, 42, 0.75)",
+                  color: "#38bdf8",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                }}
+              >
+                HEAD: {telemetry.head_yaw > 0 ? "+" : ""}{Math.round(telemetry.head_yaw)}° YAW
+              </span>
+            )}
+
             <span
               style={{
                 backgroundColor: "rgba(15, 23, 42, 0.75)",
-                color: "#38bdf8",
+                color: telemetry?.tracking_status === "REACQUIRING" ? "#f59e0b" : "#38bdf8",
                 padding: "2px 8px",
                 borderRadius: "4px",
                 fontSize: "11px",

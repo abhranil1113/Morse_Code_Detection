@@ -80,6 +80,10 @@ class MorseDecoder:
         self.current_symbol_buffer = ""
         self.current_text = ""
 
+    def clear_sentence(self):
+        """Clears the complete sentence and current symbol buffer."""
+        self.clear()
+
     def decode_sequence(self, morse_str: str) -> str:
         """
         Decodes a full Morse string where characters are separated by single spaces

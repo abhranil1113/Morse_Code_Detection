@@ -35,11 +35,15 @@ def check_eye_state_dataset(data_dir: Path) -> bool:
 
 
 def get_eye_state_label(folder_name: str) -> Optional[int]:
-    """Maps folder name to 0 (CLOSED) or 1 (OPEN)."""
+    """
+    Maps folder name to 0 (CLOSED) or 1 (OPEN).
+    Gaze-direction labels (e.g. 'close_look', 'forward_look', 'straight') are strictly excluded
+    to prevent cross-task semantic contamination.
+    """
     name = folder_name.strip().lower()
-    if name in ["closed", "close", "close_look", "closed_eyes"]:
+    if name in ["closed", "close", "closed_eyes"]:
         return 0
-    elif name in ["open", "forward_look", "open_eyes", "straight"]:
+    elif name in ["open", "open_eyes"]:
         return 1
     return None
 

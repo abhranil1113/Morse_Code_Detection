@@ -14,22 +14,30 @@ class EyeCropper:
         self,
         frame: np.ndarray,
         eye_pts: np.ndarray,
-        padding: int = 8
+        padding: int = 8,
+        face_scale: Optional[float] = None
     ) -> Optional[np.ndarray]:
-        """Crop an eye region, convert to grayscale, histogram equalize, and resize."""
+        """Crop an eye region using adaptive ROI, convert to grayscale, histogram equalize, and resize."""
+        if frame is None or not hasattr(frame, "shape") or frame.size == 0:
+            return None
+
         if eye_pts is None or len(eye_pts) == 0:
             return None
 
         h, w = frame.shape[:2]
-        x_min, y_min, x_max, y_max = EyeDetector.get_eye_bounding_box(
-            eye_pts, padding=padding, img_shape=(h, w)
+        bbox = EyeDetector.get_adaptive_eye_bounding_box(
+            eye_pts,
+            face_scale=face_scale,
+            padding_ratio=max(0.25, float(padding) / 25.0),
+            img_shape=(h, w)
         )
-
-        if x_max <= x_min or y_max <= y_min:
+        if bbox is None:
             return None
 
+        x_min, y_min, x_max, y_max = bbox
+
         crop = frame[y_min:y_max, x_min:x_max]
-        if crop.size == 0:
+        if crop.size == 0 or crop.shape[0] < 4 or crop.shape[1] < 4:
             return None
 
         # Convert to Grayscale

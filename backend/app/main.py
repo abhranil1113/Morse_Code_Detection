@@ -15,6 +15,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from app.core.config import settings
+from app.core.middleware import setup_cors_middleware
 from app.db.schema import init_db
 from app.modules.auth.router import router as auth_router
 from app.modules.rooms.router import router as rooms_router
@@ -111,14 +112,8 @@ app = FastAPI(
     }
 )
 
-# CORS Middleware for React & Vite Frontends
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS Middleware configuration managed in dedicated middleware module
+setup_cors_middleware(app)
 
 # Include API Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
@@ -212,8 +207,8 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                         telemetry = bridge.process_frame(frame)
                         telemetry.pop("processed_frame", None)
                         await ws_manager.broadcast_stream(telemetry)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[WebSocket Frame Error]: {e}")
             else:
                 # Direct telemetry broadcast from standalone Python agent or tests
                 await ws_manager.broadcast_stream(data)

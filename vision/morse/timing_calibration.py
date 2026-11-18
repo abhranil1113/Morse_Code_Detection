@@ -4,10 +4,10 @@ from dataclasses import dataclass
 @dataclass
 class MorseTimingProfile:
     """Configurable timing thresholds for distinguishing Morse blinks."""
-    dot_min_sec: float = 0.15
-    dot_max_sec: float = 0.38
+    dot_min_sec: float = 0.10
+    dot_max_sec: float = 0.40
     dash_min_sec: float = 0.40
-    dash_max_sec: float = 1.30
+    dash_max_sec: float = 1.40
     char_gap_sec: float = 0.80
     word_gap_sec: float = 2.00
 

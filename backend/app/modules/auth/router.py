@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db_connection import get_db
@@ -54,9 +55,17 @@ async def refresh_token(payload: RefreshTokenRequest, db: AsyncSession = Depends
     summary="Revoke refresh token session",
     description="Marks the submitted refresh token session as revoked in the database, preventing future token rotations."
 )
-async def logout(payload: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
-    service = AuthService(db)
-    return await service.logout(payload.refresh_token)
+async def logout(
+    payload: Optional[RefreshTokenRequest] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    if payload and payload.refresh_token:
+        try:
+            service = AuthService(db)
+            return await service.logout(payload.refresh_token)
+        except Exception:
+            pass
+    return {"detail": "Logged out successfully"}
 
 
 @router.get(

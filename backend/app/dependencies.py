@@ -35,29 +35,7 @@ async def get_current_user(
     repo = UserRepository(db)
 
     if not token:
-        # Fallback anonymous/demo user for development & instant local testability
-        demo_user = await repo.get_by_email("demo@eyespeak.ai")
-        if demo_user:
-            return demo_user
-
-        # Create demo user on the fly if not yet in database
-        demo = User(
-            id=DEMO_USER_ID,
-            display_name="Demo User",
-            email="demo@eyespeak.ai",
-            password_hash="demo_hashed_placeholder",
-            role="USER",
-            is_active=True
-        )
-        try:
-            created = await repo.create(demo)
-            return created
-        except Exception:
-            # In case concurrent creation occurred
-            user = await repo.get_by_email("demo@eyespeak.ai")
-            if user:
-                return user
-            raise credentials_exception
+        raise credentials_exception
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
